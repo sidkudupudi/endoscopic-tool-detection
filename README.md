@@ -12,7 +12,7 @@ A surgical-tool detector for endoscopic video, taken from dataset to an edge-sty
 
 </div>
 
-> **About the images in this README.** This project works with real endoscopic and laparoscopic video frames (Kvasir-Instrument, m2cai16). Charts and plots below are shown directly. Actual video stills are kept behind **"click to expand"** sections throughout, so nothing graphic appears unless you choose to open it.
+> **About the images in this README.** This project works with real endoscopic and laparoscopic video frames (Kvasir-Instrument, m2cai16). The page opens with a system diagram and the result charts first — actual video stills appear further down, inside their relevant results sections, rather than as the first thing on the page.
 
 ---
 
@@ -65,20 +65,14 @@ The full walkthrough, with code and rendered results, is in [`endoscopic_tool_de
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/kfold_map.png" alt="5-fold cross-validation" width="760"/>
 </div>
 
-<details>
-<summary><strong>Show example frames</strong> — held-out validation stills (endoscopic video, white = ground truth, orange = prediction)</summary>
-<br>
-
 <div align="center">
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/in_domain_2.jpg" alt="Validation frame: tool found" width="680"/>
 </div>
 
 <div align="center">
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/in_domain_3.jpg" alt="Validation frame: tool found" width="680"/>
+<p><sub>Held-out validation frames. White: ground truth. Orange: YOLO11n predictions at the GUI's 0.4 threshold.</sub></p>
 </div>
-
-<p align="center"><sub>Held-out validation frames. White: ground truth. Orange: YOLO11n predictions at the GUI's 0.4 threshold.</sub></p>
-</details>
 
 ### Cross-Dataset Test: GI Endoscopy → Laparoscopic Surgery
 
@@ -88,10 +82,6 @@ The Kvasir-trained model was evaluated unchanged on 2,811 laparoscopic cholecyst
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/m2cai16_cross_dataset_PR_curve.png" alt="m2cai16 PR curve" width="760"/>
 </div>
 
-<details>
-<summary><strong>Show example frames</strong> — laparoscopic surgery video stills (m2cai16)</summary>
-<br>
-
 <div align="center">
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/cross_dataset_1.jpg" alt="m2cai16 frame: both instruments missed" width="680"/>
 </div>
@@ -100,8 +90,6 @@ The Kvasir-trained model was evaluated unchanged on 2,811 laparoscopic cholecyst
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/cross_dataset_3.jpg" alt="m2cai16 frame: one of two instruments found" width="680"/>
 </div>
 
-</details>
-
 ### Latency and Failure Cases
 
 <div align="center">
@@ -109,10 +97,6 @@ The Kvasir-trained model was evaluated unchanged on 2,811 laparoscopic cholecyst
 </div>
 
 The engine is compiled from the FP32 ONNX export. TensorRT 11 builds strongly-typed networks, so it runs in FP32, and an FP16 export is the next optimisation.
-
-<details>
-<summary><strong>Show example frames</strong> — least-confident validation stills (endoscopic video)</summary>
-<br>
 
 <div align="center">
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/failure_1.jpg" alt="Missed guidewire" width="680"/>
@@ -123,8 +107,6 @@ The engine is compiled from the FP32 ONNX export. TensorRT 11 builds strongly-ty
 <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/failure_2.jpg" alt="Extra low-confidence box" width="680"/>
 <p><sub><strong>Extra box.</strong> The tool is found at 0.92, but a second box at 0.11 lands on the dark lumen.</sub></p>
 </div>
-
-</details>
 
 - **Low confidence.** In the third frame ([`failure_3.jpg`](results/examples/failure_3.jpg)), the tool is found only at 0.13, below the GUI's 0.4 threshold.
 
