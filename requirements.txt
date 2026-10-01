@@ -1,0 +1,15 @@
+# Tested with Python 3.13, CUDA 13 and an RTX 5080.
+ultralytics>=8.4          # YOLO11 / YOLOv8 training, export and inference
+torch>=2.8
+torchvision>=0.23
+opencv-python>=4.10
+numpy>=2.0
+pandas>=2.2
+matplotlib>=3.9
+pillow>=10.0
+onnx>=1.17                # ONNX export
+onnxslim>=0.1             # graph simplification during export
+pyserial>=3.5             # UART simulation (src/uart_sim)
+PySide6>=6.7              # Qt live panel (src/gui)
+# TensorRT (trtexec) and the C++ toolchain come from the NVIDIA / system packages, not pip:
+#   sudo apt install tensorrt socat cmake build-essential
