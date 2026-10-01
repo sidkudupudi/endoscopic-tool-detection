@@ -1,12 +1,39 @@
+<div align="center">
+
 # Real-Time Endoscopic Tool Detection
+
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C.svg)](https://isocpp.org/)
+[![TensorRT](https://img.shields.io/badge/TensorRT-FP32-76B900.svg)](#system-overview)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![mAP50](https://img.shields.io/badge/in--domain%20mAP50-0.937-orange.svg)](#detection-quality)
 
 A surgical-tool detector for endoscopic video, taken from dataset to an edge-style deployment. It uses YOLO11n on Kvasir-Instrument, validated with 5-fold cross-validation and a cross-dataset test. The model is exported to TensorRT and wired into a Qt live panel, which drives a C++ UART relay to a simulated microcontroller.
 
-<p align="center">
-  <img src="results/examples/in_domain_2.jpg" width="49%" alt="Validation frame: tool found">
-  <img src="results/examples/in_domain_3.jpg" width="49%" alt="Validation frame: tool found">
-</p>
-<p align="center"><sub>Held-out validation frames. White: ground truth. Orange: YOLO11n predictions at the GUI's 0.4 threshold.</sub></p>
+</div>
+
+> **About the images in this README.** This project works with real endoscopic and laparoscopic video frames (Kvasir-Instrument, m2cai16). Charts and plots below are shown directly. Actual video stills are kept behind **"click to expand"** sections throughout, so nothing graphic appears unless you choose to open it.
+
+---
+
+## Table of Contents
+- [System Overview](#system-overview)
+- [Highlights](#highlights)
+- [Results](#results)
+  - [Detection Quality](#detection-quality)
+  - [Cross-Dataset Test](#cross-dataset-test-gi-endoscopy--laparoscopic-surgery)
+  - [Latency and Failure Cases](#latency-and-failure-cases)
+- [Repository Layout](#repository-layout)
+- [Quick Start](#quick-start)
+- [Limitations and Next Steps](#limitations-and-next-steps)
+- [Data & Licenses](#data--licenses)
+
+## System Overview
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/endo-pipeline-dark.svg">
+  <img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/endo-pipeline-light.svg" alt="Training pipeline fanning out into a TensorRT edge export and a live Qt + C++ UART system">
+</picture>
 
 ## Highlights
 
@@ -14,70 +41,94 @@ A surgical-tool detector for endoscopic video, taken from dataset to an edge-sty
 |---|---|
 | **In-domain accuracy** | mAP50 **0.937** on the held-out split · **0.963 ± 0.034** across 5 folds |
 | **Generalisation test** | mAP50 **0.167** on laparoscopic video (m2cai16) without retraining, which exposes the domain gap |
-| **Inference latency** | TensorRT engine: mean **0.87 ms**, p99 **1.03 ms** per 640×640 frame on an RTX 5080 (3,451 runs) |
+| **Inference latency** | TensorRT engine: mean **0.87ms**, p99 **1.03ms** per 640×640 frame on an RTX 5080 (3,451 runs) |
 | **System** | PySide6 panel → status file → C++17 `termios` relay (`$STATE*\n` frames, 115200 8N1) → simulated MCU over a `socat` serial pair |
-| **Process** | Requirements and a test plan with recorded pass / partial / open results ([docs/](docs/test_plan.md)) |
+| **Process** | Requirements and a test plan with recorded pass / partial / open results ([`docs/`](docs/test_plan.md)) |
 
-The full walkthrough, with code and rendered results, is in **[endoscopic_tool_detection.ipynb](endoscopic_tool_detection.ipynb)**.
+The full walkthrough, with code and rendered results, is in [`endoscopic_tool_detection.ipynb`](endoscopic_tool_detection.ipynb).
 
 ## Results
 
-### Detection quality
+### Detection Quality
 
-| Model (60 epochs, 640 px) | Precision | Recall | mAP50 | mAP50-95 |
+| Model (60 epochs, 640px) | Precision | Recall | mAP50 | mAP50-95 |
 |---|---|---|---|---|
 | **YOLO11n** (final) | 0.974 | 0.879 | **0.937** | 0.804 |
 | YOLOv8n (baseline) | 0.912 | 0.923 | 0.929 | 0.818 |
 | YOLO11n, 5-fold CV (mean ± std) | 0.966 ± 0.029 | 0.932 ± 0.051 | **0.963 ± 0.034** | 0.856 ± 0.039 |
 
-<p align="center">
-  <img src="results/figures/yolo11n_training_curves.png" width="49%" alt="Training curves">
-  <img src="results/figures/kfold_map.png" width="49%" alt="5-fold cross-validation">
-</p>
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/yolo11n_training_curves.png" alt="Training curves" width="760"/>
+</div>
 
-### Cross-dataset test: GI endoscopy → laparoscopic surgery
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/kfold_map.png" alt="5-fold cross-validation" width="760"/>
+</div>
 
-The Kvasir-trained model was evaluated unchanged on 2,811 laparoscopic cholecystectomy frames (3,929 boxes, 7 tool classes merged into one). mAP50 drops from 0.96 to **0.17**. The in-domain score therefore does not transfer to a new procedure, and mixed-domain training is the next experiment. In three random frames, the model finds 2 of the 5 instruments:
+<details>
+<summary><strong>Show example frames</strong> — held-out validation stills (endoscopic video, white = ground truth, orange = prediction)</summary>
+<br>
 
-<p align="center">
-  <img src="results/examples/cross_dataset_1.jpg" width="49%" alt="m2cai16 frame: both instruments missed">
-  <img src="results/examples/cross_dataset_3.jpg" width="49%" alt="m2cai16 frame: one of two instruments found">
-</p>
-<p align="center"><img src="results/figures/m2cai16_cross_dataset_PR_curve.png" width="45%" alt="m2cai16 PR curve"></p>
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/in_domain_2.jpg" alt="Validation frame: tool found" width="680"/>
+</div>
 
-### Latency and failure cases
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/in_domain_3.jpg" alt="Validation frame: tool found" width="680"/>
+</div>
 
-<p align="center"><img src="results/figures/tensorrt_latency.png" width="60%" alt="TensorRT latency histogram"></p>
+<p align="center"><sub>Held-out validation frames. White: ground truth. Orange: YOLO11n predictions at the GUI's 0.4 threshold.</sub></p>
+</details>
+
+### Cross-Dataset Test: GI Endoscopy → Laparoscopic Surgery
+
+The Kvasir-trained model was evaluated unchanged on 2,811 laparoscopic cholecystectomy frames (3,929 boxes, 7 tool classes merged into one). mAP50 drops from 0.96 to **0.17**. The in-domain score therefore does not transfer to a new procedure, and mixed-domain training is the next experiment. In three random frames, the model finds 2 of the 5 instruments.
+
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/m2cai16_cross_dataset_PR_curve.png" alt="m2cai16 PR curve" width="760"/>
+</div>
+
+<details>
+<summary><strong>Show example frames</strong> — laparoscopic surgery video stills (m2cai16)</summary>
+<br>
+
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/cross_dataset_1.jpg" alt="m2cai16 frame: both instruments missed" width="680"/>
+</div>
+
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/cross_dataset_3.jpg" alt="m2cai16 frame: one of two instruments found" width="680"/>
+</div>
+
+</details>
+
+### Latency and Failure Cases
+
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/figures/tensorrt_latency.png" alt="TensorRT latency histogram" width="760"/>
+</div>
 
 The engine is compiled from the FP32 ONNX export. TensorRT 11 builds strongly-typed networks, so it runs in FP32, and an FP16 export is the next optimisation.
 
-The least-confident validation frames, one image each:
+<details>
+<summary><strong>Show example frames</strong> — least-confident validation stills (endoscopic video)</summary>
+<br>
 
-<p align="center">
-  <img src="results/examples/failure_1.jpg" width="49%" alt="Missed guidewire">
-  <img src="results/examples/failure_2.jpg" width="49%" alt="Extra low-confidence box">
-</p>
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/failure_1.jpg" alt="Missed guidewire" width="680"/>
+<p><sub><strong>Missed.</strong> A thin guidewire in an over-exposed view gets no detection at all.</sub></p>
+</div>
 
-- **Missed.** A thin guidewire in an over-exposed view gets no detection at all.
-- **Extra box.** The tool is found at 0.92, but a second box at 0.11 lands on the dark lumen.
-- **Low confidence.** In the third frame ([failure_3.jpg](results/examples/failure_3.jpg)), the tool is found only at 0.13, below the GUI's 0.4 threshold.
+<div align="center">
+<img src="https://github.com/sidkudupudi/endoscopic-tool-detection/raw/main/results/examples/failure_2.jpg" alt="Extra low-confidence box" width="680"/>
+<p><sub><strong>Extra box.</strong> The tool is found at 0.92, but a second box at 0.11 lands on the dark lumen.</sub></p>
+</div>
 
-## How it works
+</details>
 
-```mermaid
-flowchart LR
-    A[Kvasir-Instrument<br/>590 frames] -->|convert_to_yolo.py| B[YOLO labels<br/>502 / 88 split]
-    B --> C[YOLO11n training<br/>60 ep, 640 px]
-    B -->|kfold_split.py| K[5-fold CV]
-    C --> D[ONNX opset 17]
-    D -->|trtexec| E[TensorRT engine]
-    C --> G[PySide6 live panel<br/>viewer.py]
-    G -->|status.txt| H[C++ status_relay<br/>termios 115200 8N1]
-    H -->|"$TOOL_DETECTED*"| I[(socat virtual UART)]
-    I --> J[serial_reader.py<br/>simulated MCU]
-```
+- **Low confidence.** In the third frame ([`failure_3.jpg`](results/examples/failure_3.jpg)), the tool is found only at 0.13, below the GUI's 0.4 threshold.
 
-## Repository layout
+## Repository Layout
 
 ```
 endoscopic_tool_detection.ipynb   end-to-end notebook (code + results)
@@ -92,7 +143,7 @@ results/figures/                  training curves, PR curves, k-fold and latency
 results/metrics/                  training logs, k-fold results, TensorRT per-run timings
 ```
 
-## Quick start
+## Quick Start
 
 ```bash
 pip install -r requirements.txt
@@ -113,16 +164,22 @@ python src/gui/viewer.py data/yolo/images/val runs/detect/train/weights/best.pt 
 python src/uart_sim/serial_reader.py /dev/pts/<B>
 ```
 
-## Limitations and next steps
+## Limitations and Next Steps
 
 - Performance is **in-domain only**, as the cross-dataset mAP50 of 0.17 shows. Next: train on Kvasir plus m2cai16, then re-test on an unseen procedure.
 - The engine is FP32. Next: FP16 or INT8 (calibrated) export, and serving the TensorRT engine from the GUI instead of the PyTorch model.
 - End-to-end latency (camera → UART byte) and the timestamped event log (REQ-05) are still open in the [test plan](docs/test_plan.md).
 
-## Data & licenses
+## Data & Licenses
 
 - **Kvasir-Instrument**: Jha et al., *Kvasir-Instrument: Diagnostic and therapeutic tool segmentation dataset in gastrointestinal endoscopy*, MMM 2021. [Dataset page](https://datasets.simula.no/kvasir-instrument/).
 - **m2cai16-tool-locations**: Jin et al., *Tool Detection and Operative Skill Assessment in Surgical Videos Using Region-Based CNNs*, WACV 2018.
 - Datasets and weights are not redistributed here. Sample images in `results/` are model outputs on dataset frames, shown for illustration under the datasets' terms.
 - **Ultralytics YOLO / RT-DETR** is used as a dependency under AGPL-3.0.
-- Code: MIT (see [LICENSE](LICENSE)).
+- Code: MIT — see [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+<sub>Part of <a href="https://sidkudupudi.github.io">sidkudupudi.github.io</a> — robotics &amp; computer vision portfolio.</sub>
+</div>
